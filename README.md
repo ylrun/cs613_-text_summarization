@@ -21,14 +21,15 @@ You can install these libraries using pip:
 
 ```bash
 pip install nltk numpy networkx matplotlib scikit-learn transformers datasets rouge-score
+```
 
+### Download NLTK Data
 
-Download NLTK Data
 Download the necessary NLTK data:
 import nltk
 nltk.download('punkt')
 
-How to Run the Code
+### How to Run the Code
 	1	Load and Preprocess Data: The script loads the CNN/Daily Mail and Amazon Reviews datasets and preprocesses the texts.
 	2	Summarization Methods:
 	◦	TF-IDF Summarization: Summarizes the text based on TF-IDF scores of sentences.
@@ -41,5 +42,7 @@ How to Run the Code
 	7	Print Average ROUGE Scores: The script prints the average ROUGE scores for each summarization method.
 Running the Script
 Simply execute the script in your Python environment:
+```bash
 Python cs613_final.py
+```bash
 
