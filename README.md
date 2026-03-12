@@ -26,8 +26,11 @@ pip install nltk numpy networkx matplotlib scikit-learn transformers datasets ro
 ### Download NLTK Data
 
 Download the necessary NLTK data:
+```python
 import nltk
 nltk.download('punkt')
+nltk.download('punkt_tab')
+```
 
 ### How to Run the Code
 	1	Load and Preprocess Data: The script loads the CNN/Daily Mail and Amazon Reviews datasets and preprocesses the texts.
@@ -40,9 +43,9 @@ nltk.download('punkt')
 	5	Evaluate Summaries with ROUGE: The script evaluates the generated summaries against the original summaries in the CNN/Daily Mail dataset using ROUGE scores.
 	6	Plot ROUGE Scores: The average ROUGE scores for each summarization method are plotted for comparison.
 	7	Print Average ROUGE Scores: The script prints the average ROUGE scores for each summarization method.
-Running the Script
+## Running the Script
 Simply execute the script in your Python environment:
 ```bash
-Python cs613_final.py
-```bash
+python cs613_final.py
+```
 

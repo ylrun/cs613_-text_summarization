@@ -5,11 +5,12 @@ import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from nltk.tokenize import sent_tokenize
-from transformers import T5ForConditionalGeneration, T5Tokenizer
+from transformers import T5ForConditionalGeneration, AutoTokenizer
 from datasets import load_dataset
-from rouge import Rouge
+from rouge_score import rouge_scorer
 
 nltk.download('punkt')
+nltk.download('punkt_tab')
 
 # Load the CNN/Daily Mail and Amazon Reviews datasets
 cnn_dataset = load_dataset("cnn_dailymail", '3.0.0', split='test[:1%]')
@@ -56,7 +57,7 @@ def textrank_summarizer(text, num_sentences=5):
 
 def t5_summarizer(text):
     model_name = 't5-small'
-    tokenizer = T5Tokenizer.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = T5ForConditionalGeneration.from_pretrained(model_name)
     inputs = tokenizer.encode("summarize: " + text, return_tensors='pt', max_length=512, truncation=True)
     summary_ids = model.generate(inputs, max_length=150, min_length=40, length_penalty=2.0, num_beams=4, early_stopping=True)
@@ -93,7 +94,7 @@ plot_summary_method("TextRank Summarization (Amazon)", amazon_example, textrank_
 plot_summary_method("T5 Summarization (Amazon)", amazon_example, t5_summary_amazon)
 
 # Evaluate summaries using ROUGE (only for CNN/Daily Mail dataset)
-rouge = Rouge()
+scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
 tfidf_scores = []
 textrank_scores = []
 t5_scores = []
@@ -103,25 +104,21 @@ for i in range(len(cnn_texts)):  # Evaluate only on CNN/Daily Mail dataset
     tfidf_summary = tfidf_summarizer(cnn_texts[i])
     textrank_summary = textrank_summarizer(cnn_texts[i])
     t5_summary = t5_summarizer(cnn_texts[i])
-    
-    tfidf_score = rouge.get_scores(tfidf_summary, original_summary, avg=True)
-    textrank_score = rouge.get_scores(textrank_summary, original_summary, avg=True)
-    t5_score = rouge.get_scores(t5_summary, original_summary, avg=True)
-    
-    tfidf_scores.append(tfidf_score)
-    textrank_scores.append(textrank_score)
-    t5_scores.append(t5_score)
+
+    tfidf_scores.append(scorer.score(tfidf_summary, original_summary))
+    textrank_scores.append(scorer.score(textrank_summary, original_summary))
+    t5_scores.append(scorer.score(t5_summary, original_summary))
 
 # Compute average ROUGE scores
-avg_tfidf_scores = {key: np.mean([score[key]['f'] for score in tfidf_scores]) for key in tfidf_scores[0]}
-avg_textrank_scores = {key: np.mean([score[key]['f'] for score in textrank_scores]) for key in textrank_scores[0]}
-avg_t5_scores = {key: np.mean([score[key]['f'] for score in t5_scores]) for key in t5_scores[0]}
+avg_tfidf_scores = {key: np.mean([score[key].fmeasure for score in tfidf_scores]) for key in tfidf_scores[0]}
+avg_textrank_scores = {key: np.mean([score[key].fmeasure for score in textrank_scores]) for key in textrank_scores[0]}
+avg_t5_scores = {key: np.mean([score[key].fmeasure for score in t5_scores]) for key in t5_scores[0]}
 
 # Plot ROUGE scores
 methods = ['TF-IDF', 'TextRank', 'T5']
-rouge_1 = [avg_tfidf_scores['rouge-1'], avg_textrank_scores['rouge-1'], avg_t5_scores['rouge-1']]
-rouge_2 = [avg_tfidf_scores['rouge-2'], avg_textrank_scores['rouge-2'], avg_t5_scores['rouge-2']]
-rouge_l = [avg_tfidf_scores['rouge-l'], avg_textrank_scores['rouge-l'], avg_t5_scores['rouge-l']]
+rouge_1 = [avg_tfidf_scores['rouge1'], avg_textrank_scores['rouge1'], avg_t5_scores['rouge1']]
+rouge_2 = [avg_tfidf_scores['rouge2'], avg_textrank_scores['rouge2'], avg_t5_scores['rouge2']]
+rouge_l = [avg_tfidf_scores['rougeL'], avg_textrank_scores['rougeL'], avg_t5_scores['rougeL']]
 
 x = np.arange(len(methods))
 width = 0.2
@@ -142,6 +139,6 @@ fig.tight_layout()
 plt.show()
 
 # Print average ROUGE scores
-print(f"Average ROUGE scores for TF-IDF: {avg_tfidf_scores}")
-print(f"Average ROUGE scores for TextRank: {avg_textrank_scores}")
-print(f"Average ROUGE scores for T5: {avg_t5_scores}")
+print(f"Average ROUGE scores for TF-IDF:    rouge1={avg_tfidf_scores['rouge1']:.4f}, rouge2={avg_tfidf_scores['rouge2']:.4f}, rougeL={avg_tfidf_scores['rougeL']:.4f}")
+print(f"Average ROUGE scores for TextRank:  rouge1={avg_textrank_scores['rouge1']:.4f}, rouge2={avg_textrank_scores['rouge2']:.4f}, rougeL={avg_textrank_scores['rougeL']:.4f}")
+print(f"Average ROUGE scores for T5:        rouge1={avg_t5_scores['rouge1']:.4f}, rouge2={avg_t5_scores['rouge2']:.4f}, rougeL={avg_t5_scores['rougeL']:.4f}")
